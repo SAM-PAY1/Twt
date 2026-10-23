@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#f7f1e3" />
-  <title>Connect Ret</title>
+  <title>Connect Retrieval | Professional Certificate</title>
   <style>
     :root {
       --navy: #14264e;
@@ -155,12 +155,18 @@
       padding: 16px 18px;
       font-weight: 700;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
       box-shadow: 0 10px 22px rgba(20,38,78,0.18);
     }
 
-    .primary-btn:hover {
+    .primary-btn:hover:not(:disabled) {
       transform: translateY(-1px);
+    }
+
+    .primary-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
     }
 
     .status-text {
@@ -186,35 +192,85 @@
       font-family: Arial, sans-serif;
     }
 
-    .wallet-card {
-      margin-top: 18px;
-      padding: 18px 16px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.78), rgba(247,237,214,0.9));
-      border: 1px solid rgba(181,138,59,0.4);
-      border-radius: 18px;
+    /* Loading screen */
+    .loading-screen {
+      display: none;
+      width: 100%;
+      min-height: 720px;
+      background: rgba(255,255,255,0.46);
+      border: 1px solid rgba(181,138,59,0.34);
+      border-radius: 26px;
+      box-shadow: 0 20px 45px rgba(22, 15, 8, 0.08);
+      backdrop-filter: blur(8px);
+      padding: 40px 24px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      animation: slideUp 0.45s ease;
     }
 
-    .fee-label {
-      display: block;
-      color: var(--muted);
-      font-size: 12px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      font-family: Arial, sans-serif;
-      margin-bottom: 8px;
+    .loading-screen.active {
+      display: flex;
     }
 
-    .fee-value {
+    .spinner {
+      width: 56px;
+      height: 56px;
+      border: 3px solid rgba(181,138,59,0.25);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 24px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-title {
+      margin: 0 0 10px;
       color: var(--navy);
-      font-size: 30px;
-      font-weight: 700;
-      line-height: 1.2;
-      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0.5px;
+    }
+
+    .loading-subtitle {
+      margin: 0 0 28px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 280px;
+    }
+
+    .progress-track {
+      width: 100%;
+      max-width: 260px;
+      height: 6px;
+      background: rgba(181,138,59,0.2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--gold), #d8ba69);
+      border-radius: 99px;
+      transition: width 0.15s linear;
+    }
+
+    .loading-percent {
+      margin-top: 12px;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 1px;
     }
 
     .wallet-label {
       display: block;
-      margin-top: 18px;
+      margin-top: 8px;
       font-size: 12px;
       letter-spacing: 1px;
       color: var(--navy);
@@ -492,7 +548,8 @@
         width: min(100%, 900px);
       }
 
-      .certificate-screen {
+      .certificate-screen,
+      .loading-screen {
         min-height: 860px;
       }
 
@@ -518,9 +575,10 @@
 </head>
 <body>
   <div class="app-shell">
+    <!-- Step 1: Passcode -->
     <section class="form-step active" id="step-lock">
       <div class="brand">
-        <span class="brand-badge">↗</span>
+        <span class="brand-badge">↗️</span>
         <span>Connect Retrieval</span>
       </div>
 
@@ -531,7 +589,14 @@
         </p>
 
         <label for="passcodeInput" class="wallet-label">Passcode</label>
-        <input id="passcodeInput" class="code-input" type="password" maxlength="4" placeholder="Enter passcode" value="8804" />
+        <input
+          id="passcodeInput"
+          class="code-input"
+          type="password"
+          maxlength="4"
+          placeholder="Enter passcode"
+          autocomplete="off"
+        />
 
         <button id="unlockBtn" class="primary-btn">Unlock Access</button>
         <div id="lockStatus" class="status-text" aria-live="polite"></div>
@@ -539,6 +604,18 @@
       </div>
     </section>
 
+    <!-- Loading: after passcode -->
+    <section class="loading-screen" id="loading-auth">
+      <div class="spinner" aria-hidden="true"></div>
+      <h2 class="loading-title">Verifying Access</h2>
+      <p class="loading-subtitle">Authenticating credentials and preparing secure session…</p>
+      <div class="progress-track">
+        <div class="progress-bar" id="progressAuth"></div>
+      </div>
+      <div class="loading-percent" id="percentAuth">0%</div>
+    </section>
+
+    <!-- Step 2: Wallet (no fee shown) -->
     <section class="form-step" id="step-wallet">
       <div class="brand">
         <span class="brand-badge">◎</span>
@@ -551,13 +628,14 @@
           Please enter your valid USDT or TRX wallet address to proceed.
         </p>
 
-        <div class="wallet-card">
-          <span class="fee-label">Loading Fee</span>
-          <p class="fee-value">$80 USDT</p>
-        </div>
-
         <label for="walletInput" class="wallet-label">USDT / TRX Wallet</label>
-        <input id="walletInput" class="wallet-input" type="text" placeholder="TRX or USDT wallet address" />
+        <input
+          id="walletInput"
+          class="wallet-input"
+          type="text"
+          placeholder="TRX or USDT wallet address"
+          autocomplete="off"
+        />
 
         <button id="submitBtn" class="primary-btn">Submit &amp; Generate Certificate</button>
         <div id="walletStatus" class="status-text" aria-live="polite"></div>
@@ -565,6 +643,18 @@
       </div>
     </section>
 
+    <!-- Loading: after wallet submit -->
+    <section class="loading-screen" id="loading-cert">
+      <div class="spinner" aria-hidden="true"></div>
+      <h2 class="loading-title">Generating Certificate</h2>
+      <p class="loading-subtitle">Validating wallet and preparing official retrieval record…</p>
+      <div class="progress-track">
+        <div class="progress-bar" id="progressCert"></div>
+      </div>
+      <div class="loading-percent" id="percentCert">0%</div>
+    </section>
+
+    <!-- Step 3: Certificate (fee shown only here) -->
     <section class="form-step certificate-screen" id="step-certificate">
       <main class="certificate-page">
         <header class="certificate-header">
@@ -654,15 +744,46 @@
     const stepLock = document.getElementById('step-lock');
     const stepWallet = document.getElementById('step-wallet');
     const stepCertificate = document.getElementById('step-certificate');
+    const loadingAuth = document.getElementById('loading-auth');
+    const loadingCert = document.getElementById('loading-cert');
     const certificateWalletName = document.getElementById('certificateWalletName');
     const walletDisplay = document.getElementById('walletDisplay');
+    const progressAuth = document.getElementById('progressAuth');
+    const percentAuth = document.getElementById('percentAuth');
+    const progressCert = document.getElementById('progressCert');
+    const percentCert = document.getElementById('percentCert');
 
     const correctPasscode = '8804';
 
-    function showStep(id) {
-      [stepLock, stepWallet, stepCertificate].forEach((step) => {
-        step.classList.toggle('active', step.id === id);
+    function hideAll() {
+      [stepLock, stepWallet, stepCertificate, loadingAuth, loadingCert].forEach((el) => {
+        el.classList.remove('active');
       });
+    }
+
+    function showStep(el) {
+      hideAll();
+      el.classList.add('active');
+    }
+
+    function runLoading(progressEl, percentEl, durationMs, onComplete) {
+      let start = null;
+      progressEl.style.width = '0%';
+      percentEl.textContent = '0%';
+
+      function frame(ts) {
+        if (!start) start = ts;
+        const elapsed = ts - start;
+        const pct = Math.min(100, Math.round((elapsed / durationMs) * 100));
+        progressEl.style.width = pct + '%';
+        percentEl.textContent = pct + '%';
+        if (pct < 100) {
+          requestAnimationFrame(frame);
+        } else {
+          setTimeout(onComplete, 200);
+        }
+      }
+      requestAnimationFrame(frame);
     }
 
     unlockBtn.addEventListener('click', () => {
@@ -672,17 +793,27 @@
         lockStatus.textContent = 'Access approved.';
         lockStatus.classList.add('success');
         lockStatus.classList.remove('error');
+        unlockBtn.disabled = true;
+
         setTimeout(() => {
-          showStep('step-wallet');
-          passcodeInput.value = '';
-          lockStatus.textContent = '';
-        }, 500);
+          showStep(loadingAuth);
+          runLoading(progressAuth, percentAuth, 2200, () => {
+            showStep(stepWallet);
+            passcodeInput.value = '';
+            lockStatus.textContent = '';
+            unlockBtn.disabled = false;
+          });
+        }, 400);
       } else {
         lockStatus.textContent = 'Invalid passcode. Please try again.';
         lockStatus.classList.remove('success');
         lockStatus.classList.add('error');
         passcodeInput.focus();
       }
+    });
+
+    passcodeInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') unlockBtn.click();
     });
 
     submitBtn.addEventListener('click', () => {
@@ -696,18 +827,23 @@
         return;
       }
 
-      walletStatus.textContent = 'Certificate generated successfully.';
-      walletStatus.classList.remove('error');
-      walletStatus.classList.add('success');
+      walletStatus.textContent = '';
+      submitBtn.disabled = true;
 
       const displayName = wallet.length > 18 ? wallet.slice(0, 18) + '...' : wallet;
       certificateWalletName.textContent = displayName;
       walletDisplay.textContent = 'Wallet Address: ' + wallet;
       walletDisplay.classList.add('show');
 
-      setTimeout(() => {
-        showStep('step-certificate');
-      }, 500);
+      showStep(loadingCert);
+      runLoading(progressCert, percentCert, 2800, () => {
+        showStep(stepCertificate);
+        submitBtn.disabled = false;
+      });
+    });
+
+    walletInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitBtn.click();
     });
   </script>
 </body>
